@@ -1,37 +1,96 @@
-# dsh-system-monitor
+# System & Session Monitor
 
-Composer dock monitor for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`). Replaces the default composer usage/activity pills and context meter with 5 monochrome, drag-reorderable pills in `conversation.composer.dock`: **Context**, **Tokens**, **CPU**, **GPU**, and **MEM**.
+Five pills in the DeepSeek Harness composer dock. Context, tokens, and live system readings share one row. Click any pill to open its card.
 
-DeepSeek Harness (`dsh`) 输入框底栏系统与会话监控插件。在 `conversation.composer.dock` 槽位提供 **Context**、**Tokens**、**CPU**、**GPU**、**MEM** 五枚可拖拽吸附重排的单色胶囊，点击任意胶囊按三次贝塞尔曲线展开详情卡片。
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![platform](https://img.shields.io/badge/platform-macOS-black.svg)]()
+[![dsh](https://img.shields.io/badge/dsh-%3E%3D0.2.0--rc.1-4f46e5.svg)]()
 
-## Features / 功能特性
+English · [中文](README.zh-CN.md)
 
-- **Context Pill & Card**:
-  - Pill shows a `5×3` column-major brick micro-grid and context occupancy percentage.
-  - Card expands into a `20×5` (`100`-cell, `277×67px`) 3-color brick matrix breaking down `systemTokens`, `toolsTokens` (guaranteed at least 1 cell), and `messageTokens`.
-- **Tokens Pill & Card**:
-  - Displays current-turn net upload or streaming download tokens with a rotating directional arrow during active turns, and total conversation context tokens when idle.
-  - Deduplicates multi-step prompt history (`stepNetUp = max(0, P_k - (P_{k-1} + O_{k-1}))`) and renders up to 16 step bars plus prompt cache hit rate.
-- **CPU / GPU / MEM Pills & Cards**:
-  - Host plugin compiles a zero-dependency Mach & IOKit C sampler (`sampler.c`) on first subscription, streaming frames every `200ms` (`5Hz`) over `POST /system-monitor/stream` and stopping `5s` after the last subscriber disconnects.
-  - Falls back to `top`/`ioreg` or `node:os` when `clang` is unavailable or on non-macOS hosts.
-  - Cards display a 60-second scrolling bar chart, 60-second peak line, breakdown metrics, and top 5 processes by CPU or memory (`POST /system-monitor/processes`).
-- **Single Unified Clock (`1000ms`)**:
-  - A single `unifiedClock` mounted on one `requestAnimationFrame` loop drives all 5 pills and open cards without `setInterval`, updating numeric readings once per second while interpolating bar scrolling and growth across the full `1000ms` clock cycle.
-- **Slot-Grid Drag & Drop**:
-  - Drag any pill to reorder across the 5 dock slots with live dodging, opaque drag surface, cubic-bezier snap, and `localStorage` persistence.
+![Composer dock](docs/assets/dock.png)
 
-## Install / 安装
+## The five pills
 
-```sh
+| Pill | Live reading | Card |
+| --- | --- | --- |
+| Context | 5x3 micro grid and usage percentage | 20x5 brick matrix, system prompt / tool defs / messages split, cache hit rate |
+| Tokens | Net upload and download per turn | Direction arrows, up/down ratio, up to 16 step bars, cache hit rate |
+| CPU | User plus system load, with a 36 s bar chart | 60 s bar chart with peak line, user and system detail, top 5 processes |
+| GPU | Device utilization, with a 36 s bar chart | 60 s bar chart with peak line, renderer and tiler detail, top 5 processes |
+| MEM | Used and total, with a 36 s bar chart | 60 s bar chart with peak line, wired / compressed / floor rows, top 5 processes |
+
+Drag any pill to reorder. The order persists in localStorage.
+
+## Cards
+
+<p align="center">
+  <img src="docs/assets/card-context.png" width="24%" alt="Context card" />
+  <img src="docs/assets/card-tokens.png" width="24%" alt="Tokens card" />
+  <img src="docs/assets/card-cpu.png" width="24%" alt="CPU card" />
+  <img src="docs/assets/card-memory.png" width="24%" alt="Memory card" />
+</p>
+
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Cards opening in turn" />
+</p>
+
+One card opens at a time. Click anywhere outside to dismiss.
+
+## Install
+
+```bash
 dsh plugin --profile web add github:Shiro-umi/dsh-system-monitor
 ```
 
-Or install from the release tarball:
+Or install the release tarball:
 
-```sh
+```bash
 dsh plugin --profile web add https://github.com/Shiro-umi/dsh-system-monitor/releases/latest/download/dsh-system-monitor.tgz
 ```
+
+Link a local checkout while developing:
+
+```bash
+dsh plugin --profile web add link:/path/to/dsh-system-monitor
+```
+
+Restart DeepSeek Harness afterward.
+
+Requires macOS and clang (Xcode Command Line Tools). On first start the plugin compiles `sampler.c` into `bin/sampler`. When the install directory is read-only it builds into the system temp directory instead.
+
+## Sampling
+
+| Item | Value |
+| --- | --- |
+| Rate | One frame every 200 ms |
+| CPU | Per-core tick deltas, split into user and system |
+| GPU | IOAccelerator PerformanceStatistics |
+| Memory | vm_statistics64, same basis as `top` PhysMem |
+| Transport | NDJSON stream from the host |
+| Idle stop | Sampler exits 5 s after the last subscriber leaves |
+| Orphan guard | Sampler exits when the parent process is gone |
+
+## Fallbacks
+
+| Condition | Behavior |
+| --- | --- |
+| clang missing | Frames built from `top`, `ioreg`, and `sysctl` once per second, LOW tag on the pill |
+| Not macOS | Native sampler off, falls back to CPU and memory from node:os |
+| Process query fails | Card shows a placeholder, metrics keep updating |
+
+## Slots
+
+The plugin takes three entries in the composer dock. It replaces the built-in usage and activity indicators with its own five pills.
+
+## Develop
+
+```bash
+npm run check
+npm test
+```
+
+`npm test` verifies the manifest, export map, client static invariants, card width math, and icon geometry.
 
 ## License
 
