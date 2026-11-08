@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "系统与会话监视",
+    "description": "在输入框底栏提供 Context、Tokens、CPU、GPU、MEM 五枚胶囊与展开详情卡片，原生采样器 200 毫秒一帧。"
+  }
+}

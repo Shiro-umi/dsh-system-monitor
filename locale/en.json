@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "System & Session Monitor",
+    "description": "Composer dock pills and expandable cards for Context, Tokens, CPU, GPU, and MEM, backed by a 200 ms native macOS sampler."
+  }
+}

@@ -1,0 +1,5 @@
+- insert:
+    - id: system-monitor
+      name: 'dsh-system-monitor'
+      disabled: !!js "[...ctx.loader.entries()].some((e) => e.options.name === 'dsh-system-monitor' && e.options.id !== 'system-monitor' && !e.disabled)"
+      config: {}
